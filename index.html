@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GTA RP: Lagerverwaltung</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <link rel="stylesheet" href="./index.css">
+</head>
+
+<body class="min-h-screen">
+    <div id="app" class="min-h-screen flex flex-col">
+        <!-- Header -->
+        <header class="bg-gradient-to-r from-blue-900 to-blue-800 py-4 px-6 shadow-lg">
+            <div class="container mx-auto flex justify-between items-center">
+                <div class="flex items-center space-x-3">
+                    <i class="fas fa-warehouse text-2xl text-yellow-400"></i>
+                    <h1 class="text-2xl font-bold text-white">GTA RP: Lagerverwaltung</h1>
+                </div>
+                <div id="user-info" class="hidden">
+                    <div class="flex items-center space-x-3">
+                        <img id="user-avatar" class="w-10 h-10 rounded-full border-2 border-blue-300" src=""
+                            alt="Discord Avatar">
+                        <span id="username" class="font-medium text-white"></span>
+                        <button id="logout-btn" class="gta-button-secondary px-3 py-1 rounded text-sm">
+                            <i class="fas fa-sign-out-alt mr-1"></i> Abmelden
+                        </button>
+                    </div>
+                </div>
+                <div id="login-section">
+                    <button id="discord-login-btn" class="gta-button px-4 py-2 rounded flex items-center space-x-2">
+                        <i class="fab fa-discord text-white"></i>
+                        <span>Anmelden</span>
+                    </button>
+                </div>
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <main class="flex-1 container mx-auto py-6 px-4">
+            <!-- Login View -->
+            <div id="login-view" class="flex flex-col items-center justify-center py-12">
+                <div class="gta-panel max-w-md w-full p-8 rounded-lg text-center">
+                    <i class="fas fa-lock text-5xl text-blue-400 mb-6"></i>
+                    <h2 class="text-2xl font-bold mb-4">Lager Management</h2>
+                    <p class="text-gray-300 mb-6">Verwalte alle dein Lagern 
+                        Login with Discord to get started.</p>
+                    <button id="main-discord-login-btn"
+                        class="gta-button px-6 py-3 rounded-lg w-full flex items-center justify-center space-x-3">
+                        <i class="fab fa-discord text-white text-xl"></i>
+                        <span class="text-lg">Continue with Discord</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Dashboard View -->
+            <div id="dashboard-view" class="hidden">
+                <div class="grid grid-cols-1 lg:grid-cols-4 gap-6">
+                    <!-- Sidebar -->
+                    <div class="lg:col-span-1">
+                        <div class="gta-panel p-4 rounded-lg sticky top-6">
+                            <div class="flex justify-between items-center mb-4">
+                                <h2 class="text-xl font-bold">Storage Locations</h2>
+                                <button id="add-storage-btn" class="gta-button px-3 py-1 rounded text-sm">
+                                    <i class="fas fa-plus mr-1"></i> Add
+                                </button>
+                            </div>
+
+                            <div class="mb-4">
+                                <input type="text" id="storage-search" placeholder="Search locations..."
+                                    class="gta-input w-full px-3 py-2 rounded text-sm">
+                            </div>
+
+                            <div id="storage-list" class="space-y-2 max-h-96 overflow-y-auto gta-scrollbar">
+                                <!-- Storage items will be added here dynamically -->
+                            </div>
+
+                            <div class="mt-6 pt-4 border-t border-gray-700">
+                                <h3 class="text-sm font-semibold text-gray-400 mb-2">Quick Stats</h3>
+                                <div class="grid grid-cols-2 gap-2 text-sm">
+                                    <div class="bg-gray-800 p-2 rounded">
+                                        <div class="text-gray-400">Total Locations</div>
+                                        <div id="total-locations" class="font-bold">0</div>
+                                    </div>
+                                    <div class="bg-gray-800 p-2 rounded">
+                                        <div class="text-gray-400">Total Items</div>
+                                        <div id="total-items" class="font-bold">0</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Main Content -->
+                    <div class="lg:col-span-3">
+                        <!-- Storage Details -->
+                        <div id="storage-details" class="gta-panel p-4 rounded-lg mb-6 hidden">
+                            <div class="flex justify-between items-center mb-4">
+                                <div>
+                                    <h2 id="storage-name" class="text-xl font-bold"></h2>
+                                    <div id="storage-type" class="text-sm text-gray-400"></div>
+                                </div>
+                                <div class="flex space-x-2">
+                                    <button id="edit-storage-btn"
+                                        class="gta-button-secondary px-3 py-1 rounded text-sm">
+                                        <i class="fas fa-edit mr-1"></i> Edit
+                                    </button>
+                                    <button id="delete-storage-btn" class="gta-button-danger px-3 py-1 rounded text-sm">
+                                        <i class="fas fa-trash mr-1"></i> Delete
+                                    </button>
+                                </div>
+                            </div>
+
+                            <div id="storage-description" class="text-gray-300 mb-4 text-sm"></div>
+
+                            <div class="flex justify-between items-center mb-4">
+                                <h3 class="font-semibold">Items in Storage</h3>
+                                <button id="add-item-btn" class="gta-button px-3 py-1 rounded text-sm">
+                                    <i class="fas fa-plus mr-1"></i> Add Item
+                                </button>
+                            </div>
+
+                            <div class="mb-4">
+                                <div class="flex space-x-2">
+                                    <input type="text" id="item-search" placeholder="Search items..."
+                                        class="gta-input flex-1 px-3 py-2 rounded text-sm">
+                                    <select id="category-filter" class="gta-input px-3 py-2 rounded text-sm">
+                                        <option value="all">All Categories</option>
+                                        <option value="weapons">Weapons</option>
+                                        <option value="drugs">Drugs</option>
+                                        <option value="materials">Materials</option>
+                                        <option value="food">Food</option>
+                                        <option value="other">Other</option>
+                                    </select>
+                                </div>
+                            </div>
+
+                            <div id="items-list" class="space-y-2 max-h-96 overflow-y-auto gta-scrollbar">
+                                <!-- Items will be added here dynamically -->
+                            </div>
+
+                            <div id="no-items-message" class="text-center py-8 text-gray-500 hidden">
+                                <i class="fas fa-box-open text-4xl mb-3"></i>
+                                <p>No items in this storage yet. Add your first item!</p>
+                            </div>
+                        </div>
+
+                        <!-- Empty State -->
+                        <div id="empty-state" class="gta-panel p-8 rounded-lg text-center">
+                            <i class="fas fa-warehouse text-5xl text-blue-400 mb-6"></i>
+                            <h2 class="text-2xl font-bold mb-4">Welcome to your Storage Manager</h2>
+                            <p class="text-gray-300 mb-6">Get started by adding your first storage location. This could
+                                be a vehicle, warehouse, apartment, or any other place where you store items.</p>
+                            <button id="empty-add-storage-btn"
+                                class="gta-button px-6 py-3 rounded-lg inline-flex items-center space-x-2">
+                                <i class="fas fa-plus"></i>
+                                <span>Add Storage Location</span>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <!-- Footer -->
+        <footer class="bg-gray-900 py-4 px-6 border-t border-gray-800">
+            <div class="container mx-auto text-center text-gray-500 text-sm">
+                <p>GTA RP: Lagerverwaltung - Not affiliated with Rockstar Games</p>
+                <p class="mt-1">Data is stored locally in your browser</p>
+            </div>
+        </footer>
+    </div>
+
+    <!-- Modals -->
+    <!-- Add/Edit Storage Modal -->
+    <div id="storage-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="gta-panel w-full max-w-md p-6 rounded-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="storage-modal-title" class="text-xl font-bold">Add Storage Location</h3>
+                <button id="close-storage-modal" class="text-gray-400 hover:text-gray-300">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <form id="storage-form" class="space-y-4">
+                <input type="hidden" id="storage-id">
+
+                <div>
+                    <label for="storage-name-input" class="block text-sm font-medium mb-1">Name</label>
+                    <input type="text" id="storage-name-input" required class="gta-input w-full px-3 py-2 rounded">
+                </div>
+
+                <div>
+                    <label for="storage-type-select" class="block text-sm font-medium mb-1">Type</label>
+                    <select id="storage-type-select" required class="gta-input w-full px-3 py-2 rounded">
+                        <option value="">Select type...</option>
+                        <option value="vehicle">Vehicle</option>
+                        <option value="warehouse">Warehouse</option>
+                        <option value="apartment">Apartment</option>
+                        <option value="garage">Garage</option>
+                        <option value="other">Other</option>
+                    </select>
+                </div>
+
+                <div>
+                    <label for="storage-description-input" class="block text-sm font-medium mb-1">Description
+                        (Optional)</label>
+                    <textarea id="storage-description-input" rows="3"
+                        class="gta-input w-full px-3 py-2 rounded"></textarea>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" id="cancel-storage-btn" class="gta-button-secondary px-4 py-2 rounded">
+                        Cancel
+                    </button>
+                    <button type="submit" id="save-storage-btn" class="gta-button px-4 py-2 rounded">
+                        Save Location
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Add/Edit Item Modal -->
+    <div id="item-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="gta-panel w-full max-w-md p-6 rounded-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="item-modal-title" class="text-xl font-bold">Add Item</h3>
+                <button id="close-item-modal" class="text-gray-400 hover:text-gray-300">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <form id="item-form" class="space-y-4">
+                <input type="hidden" id="item-id">
+                <input type="hidden" id="item-storage-id">
+
+                <div>
+                    <label for="item-name-input" class="block text-sm font-medium mb-1">Item Name</label>
+                    <input type="text" id="item-name-input" required class="gta-input w-full px-3 py-2 rounded">
+                </div>
+
+                <div class="grid grid-cols-2 gap-4">
+                    <div>
+                        <label for="item-quantity-input" class="block text-sm font-medium mb-1">Quantity</label>
+                        <input type="number" id="item-quantity-input" min="1" value="1" required
+                            class="gta-input w-full px-3 py-2 rounded">
+                    </div>
+
+                    <div>
+                        <label for="item-category-select" class="block text-sm font-medium mb-1">Category</label>
+                        <select id="item-category-select" required class="gta-input w-full px-3 py-2 rounded">
+                            <option value="weapons">Weapons</option>
+                            <option value="drugs">Drugs</option>
+                            <option value="materials">Materials</option>
+                            <option value="food">Food</option>
+                            <option value="other">Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div>
+                    <label for="item-description-input" class="block text-sm font-medium mb-1">Description
+                        (Optional)</label>
+                    <textarea id="item-description-input" rows="3"
+                        class="gta-input w-full px-3 py-2 rounded"></textarea>
+                </div>
+
+                <div class="flex justify-end space-x-3 pt-4">
+                    <button type="button" id="cancel-item-btn" class="gta-button-secondary px-4 py-2 rounded">
+                        Cancel
+                    </button>
+                    <button type="submit" id="save-item-btn" class="gta-button px-4 py-2 rounded">
+                        Save Item
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <!-- Confirmation Modal -->
+    <div id="confirm-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="gta-panel w-full max-w-md p-6 rounded-lg">
+            <div class="flex justify-between items-center mb-4">
+                <h3 id="confirm-modal-title" class="text-xl font-bold">Confirm Action</h3>
+                <button id="close-confirm-modal" class="text-gray-400 hover:text-gray-300">
+                    <i class="fas fa-times"></i>
+                </button>
+            </div>
+
+            <p id="confirm-modal-message" class="mb-6">Are you sure you want to perform this action?</p>
+
+            <div class="flex justify-end space-x-3">
+                <button type="button" id="cancel-confirm-btn" class="gta-button-secondary px-4 py-2 rounded">
+                    Cancel
+                </button>
+                <button type="button" id="confirm-action-btn" class="gta-button-danger px-4 py-2 rounded">
+                    Confirm
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <script src="index.js"></script>
+</body>
+
+</html>
