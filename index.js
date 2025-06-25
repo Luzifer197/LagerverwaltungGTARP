@@ -1,4 +1,3 @@
-// App State
 const state = {
     currentUser: null,
     storages: [],
@@ -80,10 +79,116 @@ function init() {
 
     if (state.currentUser) {
         showDashboard();
-        loadStorages();
+        loadServers();
     } else {
         showLogin();
     }
+}
+
+// Load servers for current user
+function loadServers() {
+    if (state.servers.length === 0) {
+        // Add default server if none exists
+        const defaultServer = {
+            id: state.nextServerId++,
+            name: 'Main Server',
+            ip: 'gtarp.example.com',
+            description: 'Your main GTA RP server'
+        };
+        state.servers.push(defaultServer);
+        state.currentServer = defaultServer;
+        saveUserData();
+    }
+    renderServerList();
+}
+
+// Render server list
+function renderServerList() {
+    elements.serverList.innerHTML = '';
+
+    state.servers.forEach(server => {
+        const serverElement = document.createElement('div');
+        serverElement.className = `p-3 rounded cursor-pointer transition-colors ${state.currentServer?.id === server.id ? 'bg-blue-900 bg-opacity-50' : 'hover:bg-gray-800'}`;
+        serverElement.dataset.id = server.id;
+
+        serverElement.innerHTML = `
+            <div class="flex justify-between items-start">
+                <div>
+                    <h3 class="font-medium">${server.name}</h3>
+                    <div class="text-xs text-gray-400 mt-1">${server.ip}</div>
+                </div>
+                <i class="fas fa-server text-blue-400"></i>
+            </div>
+        `;
+
+        serverElement.addEventListener('click', () => {
+            state.currentServer = server;
+            loadStorages();
+            renderServerList();
+        });
+
+        elements.serverList.appendChild(serverElement);
+    });
+}
+
+// Show server modal
+function showServerModal(action, serverId = null) {
+    if (action === 'add') {
+        elements.serverModalTitle.textContent = 'Add Server';
+        elements.serverForm.reset();
+        elements.serverId.value = '';
+    } else if (action === 'edit') {
+        const server = state.servers.find(s => s.id === serverId);
+        if (!server) return;
+
+        elements.serverModalTitle.textContent = 'Edit Server';
+        elements.serverId.value = server.id;
+        elements.serverNameInput.value = server.name;
+        elements.serverIpInput.value = server.ip;
+        elements.serverDescriptionInput.value = server.description || '';
+    }
+
+    elements.serverModal.classList.remove('hidden');
+}
+
+// Close server modal
+function closeServerModal() {
+    elements.serverModal.classList.add('hidden');
+}
+
+// Handle server form submit
+function handleServerFormSubmit(e) {
+    e.preventDefault();
+
+    const serverData = {
+        name: elements.serverNameInput.value.trim(),
+        ip: elements.serverIpInput.value.trim(),
+        description: elements.serverDescriptionInput.value.trim()
+    };
+
+    if (elements.serverId.value) {
+        // Edit existing server
+        const serverId = parseInt(elements.serverId.value);
+        const serverIndex = state.servers.findIndex(s => s.id === serverId);
+
+        if (serverIndex !== -1) {
+            state.servers[serverIndex] = { ...serverData, id: serverId };
+            if (state.currentServer?.id === serverId) {
+                state.currentServer = state.servers[serverIndex];
+            }
+        }
+    } else {
+        // Add new server
+        const newServer = {
+            ...serverData,
+            id: state.nextServerId++
+        };
+        state.servers.push(newServer);
+    }
+
+    saveUserData();
+    renderServerList();
+    closeServerModal();
 }
 
 // Load user data from localStorage
@@ -123,6 +228,12 @@ function setupEventListeners() {
     elements.discordLoginBtn.addEventListener('click', handleDiscordLogin);
     elements.mainDiscordLoginBtn.addEventListener('click', handleDiscordLogin);
     elements.logoutBtn.addEventListener('click', handleLogout);
+
+    // Server events
+    elements.addServerBtn.addEventListener('click', () => showServerModal('add'));
+    elements.serverForm.addEventListener('submit', handleServerFormSubmit);
+    elements.cancelServerBtn.addEventListener('click', closeServerModal);
+    elements.closeServerModal.addEventListener('click', closeServerModal);
 
     // Storage events
     elements.addStorageBtn.addEventListener('click', () => showStorageModal('add'));
@@ -172,22 +283,58 @@ function showDashboard() {
     updateStats();
 }
 
-// Handle Discord login (simulated for this demo)
+// Handle Discord login
 function handleDiscordLogin() {
-    // In a real app, this would use Discord OAuth2
-    // For this demo, we'll simulate a login with mock data
-    const mockUser = {
-        id: '123456789',
-        username: 'GTA_RP_Player',
-        avatar: 'https://cdn.discordapp.com/avatars/123456789/abcdef123456.webp'
-    };
+    // Redirect to Discord OAuth2
+    const clientId = 'YOUR_DISCORD_CLIENT_ID';
+    const redirectUri = encodeURIComponent(window.location.origin + '/auth/callback');
+    const scope = encodeURIComponent('identify email');
+    const responseType = 'code';
+    
+    const authUrl = `https://discord.com/api/oauth2/authorize?client_id=${clientId}&redirect_uri=${redirectUri}&response_type=${responseType}&scope=${scope}`;
+    
+    window.location.href = authUrl;
+}
 
-    state.currentUser = mockUser;
-    saveUserData();
-    showDashboard();
-
-    // Show welcome message
-    alert(`Welcome back, ${mockUser.username}!`);
+// Handle Discord callback (to be called from auth callback page)
+function handleDiscordCallback(code) {
+    // Exchange code for token
+    fetch('/api/discord/token', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json'
+        },
+        body: JSON.stringify({ code })
+    })
+    .then(response => response.json())
+    .then(data => {
+        if (data.access_token) {
+            // Get user info
+            return fetch('/api/discord/user', {
+                headers: {
+                    'Authorization': `Bearer ${data.access_token}`
+                }
+            });
+        }
+        throw new Error('Failed to get access token');
+    })
+    .then(response => response.json())
+    .then(user => {
+        state.currentUser = {
+            id: user.id,
+            username: user.username,
+            avatar: user.avatar 
+                ? `https://cdn.discordapp.com/avatars/${user.id}/${user.avatar}.png`
+                : 'https://cdn.discordapp.com/embed/avatars/0.png'
+        };
+        
+        saveUserData();
+        showDashboard();
+    })
+    .catch(error => {
+        console.error('Login failed:', error);
+        alert('Login failed. Please try again.');
+    });
 }
 
 // Handle logout
